@@ -2403,10 +2403,10 @@ const SEED_DATA = {
       preparedTime: new Date(Date.now() - 110 * 60 * 1000).toISOString(),
       seedOffsetMinutes: 110,
       expiryHours: 3.5,
-      status: "available",
-      claimedByNgo: null,
-      volunteer: null,
-      otp: null,
+      status: "claimed",
+      claimedByNgo: "Robin Hood Food Relief Chapter",
+      volunteer: "Arjun Mehta",
+      otp: "4317", // OTP was generated when the NGO claimed this listing
       notes: "Contact Operations Dock on arrival.",
       image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600"
     },
@@ -2475,10 +2475,10 @@ const SEED_DATA = {
       preparedTime: new Date(Date.now() - 70 * 60 * 1000).toISOString(),
       seedOffsetMinutes: 70,
       expiryHours: 4,
-      status: "available",
-      claimedByNgo: null,
-      volunteer: null,
-      otp: null,
+      status: "claimed",
+      claimedByNgo: "Akshaya Feed India Trust",
+      volunteer: "Sana Khan",
+      otp: "7264", // OTP was generated when the NGO claimed this listing
       notes: "Collect from banquet kitchen gate.",
       image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600"
     },
@@ -2547,10 +2547,10 @@ const SEED_DATA = {
       preparedTime: new Date(Date.now() - 95 * 60 * 1000).toISOString(),
       seedOffsetMinutes: 95,
       expiryHours: 4.5,
-      status: "available",
-      claimedByNgo: null,
-      volunteer: null,
-      otp: null,
+      status: "claimed",
+      claimedByNgo: "Hope Haven Shelter & Kitchen",
+      volunteer: "Rohit Yadav",
+      otp: "9352", // OTP was generated when the NGO claimed this listing
       notes: "Call host on arrival at main gate.",
       image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600"
     },
@@ -2829,7 +2829,7 @@ window.notifications = new NotificationEngine();
 
 class Store {
   constructor() {
-    this.STORAGE_KEY = 'EXTRAPLATE_STATE_V4';
+    this.STORAGE_KEY = 'EXTRAPLATE_STATE_V5';
     this.channel = null;
     this.liveLocation = false; // true only after a successful browser geolocation fix
     this.listeners = [];
@@ -3076,11 +3076,18 @@ class FoodRescueMap {
       maxZoom: 19
     });
     let tileErrors = 0;
+    let tilesLoaded = 0;
+    osm.on('tileload', () => { tilesLoaded += 1; });
     osm.on('tileerror', () => {
       tileErrors += 1;
       if (tileErrors >= 4 && map.hasLayer(osm)) { map.removeLayer(osm); carto.addTo(map); }
     });
     osm.addTo(map);
+    // Slow-network rescue: if OSM tiles hang without loading (common on mobile
+    // data), switch to CARTO after a few seconds instead of a grey map.
+    setTimeout(() => {
+      if (tilesLoaded === 0 && map.hasLayer(osm)) { map.removeLayer(osm); carto.addTo(map); }
+    }, 3500);
 
     this.markersLayers[elementId] = L.layerGroup().addTo(map);
     this.radiusLayers[elementId] = L.layerGroup().addTo(map);
